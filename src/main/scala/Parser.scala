@@ -1,6 +1,7 @@
 import Parser.*
 
 import scala.collection.mutable
+import scala.io.StdIn
 
 object Parser {
   type StateNo = Int
@@ -12,10 +13,13 @@ object Parser {
   case class Shift(state_no: StateNo) extends Action
   case class Reduce(rule_no: RuleNo)  extends Action
   case object Accept                  extends Action
-  case object Error                   extends Action
 
   def main(args: Array[String]): Unit = {
-    val input: List[Char] = "a,b,a#".toList
+    println("Enter a string: ")
+    val in = StdIn.readLine()
+    val input: List[Char] =
+      if (in.endsWith("#")) { in.toList }
+      else { in.toList :+ '#' }
 
     val symbols: List[Symbol] = List('L', 'E')
     val rule_table: Map[RuleNo, Rule] =
@@ -51,30 +55,18 @@ object Parser {
       )
 
     val parser = new Parser(input, symbols, rule_table, action_table, goto_table)
-
     parser.parse()
   }
 }
 
 class Parser(
-    /*
-     * a[1]a[2]a[3]...a[i]...#
-     * where a[i] in {'a', 'b', ','}
-     */
     val input: List[Char],
-    /* L, E */
     val symbols: List[Symbol],
-    /*
-     * rule_no ->
-     *   symbol -> [char|symbol]
-     */
     val rule_table: Map[RuleNo, Rule],
-    /* (state, a[i]) -> action */
     val action_table: Map[(StateNo, Char), Action],
-    /* (state, X[i]) -> goto state */
     val goto_table: Map[(StateNo, Symbol), StateNo]
 ) {
-  require(input.endsWith("#"), "Input must end with '#'")
+  require(input.last.equals('#'), "Input must end with '#'")
 
   val input_stack: mutable.Stack[Char]                  = mutable.Stack[Char](input*)
   val state_stack: mutable.Stack[Int]                   = mutable.Stack(0)
@@ -106,18 +98,20 @@ class Parser(
         case Accept =>
           println("accept")
           return
-        case Error =>
-          println("error")
-          return
       }
     }
   }
 
   def trace(): Unit = {
-    val state           = state_stack.mkString("[", ",", "]")
-    val symbol          = symbol_stack.mkString("[", ",", "]")
+    val state = state_stack.mkString("[", ",", "]")
+    val symbol = symbol_stack
+      .map {
+        case Left(char)    => char
+        case Right(symbol) => symbol
+      }
+      .mkString("[", "", "]")
     val remaining_input = input_stack.mkString
 
-    println(f"|state $state%20s|symbol $symbol%60s|remaining $remaining_input%20s|")
+    println(f"|state $state%30s|symbol $symbol%30s|remaining $remaining_input%20s|")
   }
 }
