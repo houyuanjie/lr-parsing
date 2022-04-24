@@ -101,14 +101,14 @@ class Parser(
 
   /* 跟踪函数 将堆栈信息打印到控制台 */
   def trace(): Unit = {
-    val state = state_stack.mkString("[", ",", "]")
+    val state = state_stack.mkString("[", "", "]")
     val symbol = symbol_stack
       .map {
         case Left(char)    => char
         case Right(symbol) => symbol
       }
       .mkString("[", "", "]")
-    val remaining_input = input_stack.mkString
+    val remaining_input = input_stack.mkString("[", "", "]")
 
     println(f"|state $state%30s|symbol $symbol%30s|remaining $remaining_input%20s|")
   }
